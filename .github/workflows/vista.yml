@@ -1,0 +1,48 @@
+name: Run Vista scraper
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-vista:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run scraper
+        run: python vista.py
+
+      - name: Check CSV
+        run: |
+          ls -la
+          echo "CSV preview:"
+          head -n 10 vista.csv
+
+      - name: Commit updated CSV
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add vista.csv
+
+          if git diff --cached --quiet; then
+            echo "Ni sprememb v vista.csv."
+          else
+            git commit -m "Update vista.csv"
+            git push
+          fi
